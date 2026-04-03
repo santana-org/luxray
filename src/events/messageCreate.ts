@@ -1,4 +1,4 @@
-import { type Message } from 'discord.js';
+import { type Message, Events } from 'discord.js';
 import { config } from '../core/config.js';
 import { logger, LOGS } from '../utils/logger.js';
 
@@ -9,7 +9,7 @@ const prefixCommands = new Map<string, PrefixCommandHandler>([
 ]);
 
 export default {
-  name: 'messageCreate',
+  name: Events.MessageCreate,
   async execute(message: Message): Promise<void> {
     if (message.author.bot) return;
     if (!message.content.startsWith(config.prefix)) return;

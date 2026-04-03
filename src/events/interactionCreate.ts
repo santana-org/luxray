@@ -1,9 +1,9 @@
-import { type Interaction } from 'discord.js';
+import { type Interaction, Events } from 'discord.js';
 import { client } from '../core/client.js';
 import { logger, LOGS } from '../utils/logger.js';
 
 export default {
-  name: 'interactionCreate',
+  name: Events.InteractionCreate,
   async execute(interaction: Interaction): Promise<void> {
     if (!interaction.isChatInputCommand()) return;
 
