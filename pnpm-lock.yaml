@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@santana-org/logger':
+        specifier: ^0.2.0
+        version: 0.2.0
       discord.js:
         specifier: ^14.26.1
         version: 14.26.1
@@ -210,6 +213,10 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@santana-org/logger@0.2.0':
+    resolution: {integrity: sha512-1JnQQ9AUyfQF4BZ9BYRIwSfe8zrzdEcPiNQribXrvmhwyUJe/xU7oFrqgQRYsZxtcXY2U+hIPc0zfCs1JYevZg==}
+    engines: {node: '>=25'}
 
   '@sapphire/async-queue@1.5.5':
     resolution: {integrity: sha512-cvGzxbba6sav2zZkH8GPf2oGk9yYoD5qrNWdu9fRehifgnFZJMV+nuy2nON2roRO4yQQ+v7MK/Pktl/HgfsUXg==}
@@ -439,6 +446,8 @@ snapshots:
 
   '@esbuild/win32-x64@0.27.7':
     optional: true
+
+  '@santana-org/logger@0.2.0': {}
 
   '@sapphire/async-queue@1.5.5': {}
 
