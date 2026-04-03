@@ -1,6 +1,6 @@
 import { type Interaction } from 'discord.js';
 import { client } from '../core/client.js';
-import { logger } from '../utils/logger.js';
+import { logger, LOGS } from '../utils/logger.js';
 
 export default {
   name: 'interactionCreate',
@@ -10,14 +10,14 @@ export default {
     const command = client.commands.get(interaction.commandName);
 
     if (!command) {
-      logger.error(`Unknown command: ${interaction.commandName}`);
+      logger.info(LOGS.UNKNOWN_COMMAND(interaction.commandName));
       return;
     }
 
     try {
       await command.execute(interaction);
     } catch (error) {
-      logger.error(`Error executing command: ${interaction.commandName}`, error);
+      logger.error(LOGS.COMMAND_ERROR(interaction.commandName), error);
 
       const message = { content: 'An error occurred while executing this command.', ephemeral: true };
 

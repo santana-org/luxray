@@ -1,6 +1,6 @@
 import { type Message } from 'discord.js';
 import { config } from '../core/config.js';
-import { logger } from '../utils/logger.js';
+import { logger, LOGS } from '../utils/logger.js';
 
 type PrefixCommandHandler = (message: Message, args: string[]) => Promise<void>;
 
@@ -22,14 +22,14 @@ export default {
     const handler = prefixCommands.get(commandName);
 
     if (!handler) {
-      logger.info(`Unknown prefix command: ${commandName}`);
+      logger.info(LOGS.UNKNOWN_PREFIX_CMD(commandName));
       return;
     }
 
     try {
       await handler(message, args);
     } catch (error) {
-      logger.error(`Error executing prefix command: ${commandName}`, error);
+      logger.error(LOGS.PREFIX_CMD_ERROR(commandName), error);
     }
   },
 };
