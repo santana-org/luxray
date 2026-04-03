@@ -6,12 +6,14 @@ import type { Client, RESTPostAPIChatInputApplicationCommandsJSONBody } from 'di
 import type { Command } from '../types/command.js';
 import { config } from '../core/config.js';
 import { logger } from '../utils/logger.js';
+import { getSourceExt } from '../utils/paths.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export async function loadCommands(client: Client): Promise<void> {
   const commandsDir = join(__dirname, '../commands');
-  const files = readdirSync(commandsDir).filter((f) => f.endsWith('.js'));
+  const ext = getSourceExt(import.meta.url);
+  const files = readdirSync(commandsDir).filter((f) => f.endsWith(ext));
   const commandData: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
 
   for (const file of files) {

@@ -12,4 +12,5 @@ export const config = {
   token: requireEnv('DISCORD_TOKEN'),
   clientId: requireEnv('CLIENT_ID'),
   guildId: process.env['GUILD_ID'],
+  prefix: process.env['BOT_PREFIX'] ?? '!',
 } as const;

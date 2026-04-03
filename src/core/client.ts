@@ -2,7 +2,11 @@ import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import type { Command } from '../types/command.js';
 
 export const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 client.commands = new Collection<string, Command>();

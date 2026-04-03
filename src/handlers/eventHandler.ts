@@ -3,6 +3,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Client } from 'discord.js';
 import { logger } from '../utils/logger.js';
+import { getSourceExt } from '../utils/paths.js';
 
 interface Event {
   name: string;
@@ -14,7 +15,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export async function loadEvents(client: Client): Promise<void> {
   const eventsDir = join(__dirname, '../events');
-  const files = readdirSync(eventsDir).filter((f) => f.endsWith('.js'));
+  const ext = getSourceExt(import.meta.url);
+  const files = readdirSync(eventsDir).filter((f) => f.endsWith(ext));
 
   for (const file of files) {
     const { default: event } = (await import(
