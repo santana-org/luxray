@@ -34,6 +34,7 @@ export default {
         {
           name: `reviewing ${count} repositories`,
           type: ActivityType.Watching,
+          url: 'https://github.com/santana-org',
         },
       ],
     });

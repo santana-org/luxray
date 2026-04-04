@@ -7,7 +7,11 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "nodemon --exec tsx src/index.ts",
+    "dev:watch": "nodemon --exec tsx src/index.ts --watch src",
+    "lint": "biome lint --write",
+    "format": "biome format --write src",
+    "check": "biome check --apply src"
   },
   "keywords": [
     "discord",
@@ -25,7 +29,9 @@
     "dotenv": "^17.4.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.10",
     "@types/node": "^25.5.2",
+    "nodemon": "^3.1.14",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }
