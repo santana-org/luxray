@@ -27,8 +27,11 @@ jobs:
       - name: Run Biome check
         run: pnpm run lint
 
-      - name: Run Biome format check
-        run: pnpm exec biome format --check src
+      - name: Run Biome format
+        run: pnpm run format
+
+      - name: Run Biome check
+        run: pnpm run check
 
       - name: Type check
         run: pnpm run build
