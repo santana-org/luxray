@@ -1,38 +1,42 @@
 {
-  "name": "luxray",
-  "version": "1.0.0",
-  "description": "A minimal, clean, and scalable Discord bot built with TypeScript and discord.js",
-  "type": "module",
-  "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "nodemon --exec tsx src/index.ts",
-    "dev:watch": "nodemon --exec tsx src/index.ts --watch src",
-    "lint": "biome lint --write",
-    "format": "biome format --write src",
-    "check": "biome check --apply src"
-  },
-  "keywords": [
-    "discord",
-    "bot",
-    "typescript"
-  ],
-  "license": "MIT",
-  "engines": {
-    "node": ">=20.0.0"
-  },
-  "packageManager": "pnpm@10.33.0",
-  "dependencies": {
-    "@santana-org/logger": "^0.2.0",
-    "discord.js": "^14.26.1",
-    "dotenv": "^17.4.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.10",
-    "@types/node": "^25.5.2",
-    "nodemon": "^3.1.14",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
-  }
+	"name": "luxray",
+	"version": "1.0.0",
+	"description": "A minimal, clean, and scalable Discord bot built with TypeScript and discord.js",
+	"type": "module",
+	"main": "dist/index.js",
+	"scripts": {
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"dev": "nodemon --exec tsx src/index.ts",
+		"dev:watch": "nodemon --exec tsx src/index.ts --watch src",
+		"lint": "biome lint --write",
+		"format": "biome format --write src",
+		"check": "biome check --apply src"
+	},
+	"keywords": [
+		"discord",
+		"bot",
+		"typescript"
+	],
+	"license": "MIT",
+	"engines": {
+		"node": ">=20.0.0"
+	},
+	"packageManager": "pnpm@10.33.0",
+	"dependencies": {
+		"@santana-org/logger": "^0.2.0",
+		"discord.js": "^14.26.1",
+		"dotenv": "^17.4.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.10",
+		"@commitlint/cli": "^20.5.0",
+		"@commitlint/config-conventional": "^20.5.0",
+		"@types/node": "^25.5.2",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.4.0",
+		"nodemon": "^3.1.14",
+		"tsx": "^4.21.0",
+		"typescript": "^6.0.2"
+	}
 }
