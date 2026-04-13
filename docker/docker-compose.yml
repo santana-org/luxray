@@ -1,0 +1,48 @@
+services:
+  luxray-bot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+
+    container_name: luxray-bot
+    restart: unless-stopped
+
+    env_file:
+      - ../.env
+
+    environment:
+      NODE_ENV: production
+
+    volumes:
+      - ./logs:/app/logs
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+
+
