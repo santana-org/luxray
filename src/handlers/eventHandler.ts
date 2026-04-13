@@ -1,7 +1,7 @@
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Client } from "discord.js";
-import { logger, LOGS } from "../utils/logger.js";
+import { LOGS, logger } from "../utils/logger.js";
 import { getSourceExt, walkDir } from "../utils/paths.js";
 
 // 🎯 Event handler interface

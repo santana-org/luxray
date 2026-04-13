@@ -11,7 +11,7 @@
 		"dev:watch": "nodemon --exec tsx src/index.ts --watch src",
 		"lint": "biome lint --write",
 		"format": "biome format --write src",
-		"check": "biome check --apply src"
+		"check": "biome check --write"
 	},
 	"keywords": [
 		"discord",

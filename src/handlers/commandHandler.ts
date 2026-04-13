@@ -1,13 +1,13 @@
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { REST, Routes } from "discord.js";
 import type {
 	Client,
 	RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
-import type { Command } from "../types/command.js";
+import { REST, Routes } from "discord.js";
 import { config } from "../core/config.js";
-import { logger, LOGS } from "../utils/logger.js";
+import type { Command } from "../types/command.js";
+import { LOGS, logger } from "../utils/logger.js";
 import { getSourceExt, walkDir } from "../utils/paths.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

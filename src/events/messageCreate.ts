@@ -1,6 +1,6 @@
-import { type Message, Events } from "discord.js";
+import { Events, type Message } from "discord.js";
 import { config } from "../core/config.js";
-import { logger, LOGS } from "../utils/logger.js";
+import { LOGS, logger } from "../utils/logger.js";
 
 // 📝 Prefix command response messages
 const PREFIX_RESPONSES = {

@@ -1,5 +1,5 @@
-import { type Client, Events, ActivityType } from "discord.js";
-import { logger, LOGS } from "../utils/logger.js";
+import { ActivityType, type Client, Events } from "discord.js";
+import { LOGS, logger } from "../utils/logger.js";
 
 // 🔗 API configuration constants
 const GITHUB_API = {

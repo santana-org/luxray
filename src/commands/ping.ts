@@ -1,5 +1,5 @@
-import { SlashCommandBuilder } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import type { Command } from "../types/command.js";
 
 // 🏓 Ping command configuration

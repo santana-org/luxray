@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Collection } from "discord.js";
+import { Client, Collection, GatewayIntentBits } from "discord.js";
 import type { Command } from "../types/command.js";
 
 // 🎯 Discord intents configuration
