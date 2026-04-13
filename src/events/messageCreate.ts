@@ -2,13 +2,19 @@ import { type Message, Events } from "discord.js";
 import { config } from "../core/config.js";
 import { logger, LOGS } from "../utils/logger.js";
 
+// 📝 Prefix command response messages
+const PREFIX_RESPONSES = {
+	PING_PONG: "🏓 Pong!",
+} as const;
+
+// 🔧 Prefix commands mapping
 type PrefixCommandHandler = (message: Message, args: string[]) => Promise<void>;
 
 const prefixCommands = new Map<string, PrefixCommandHandler>([
 	[
 		"ping",
 		async (message) => {
-			await message.reply("Pong!");
+			await message.reply(PREFIX_RESPONSES.PING_PONG);
 		},
 	],
 ]);

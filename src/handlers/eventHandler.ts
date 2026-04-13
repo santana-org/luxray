@@ -4,6 +4,7 @@ import type { Client } from "discord.js";
 import { logger, LOGS } from "../utils/logger.js";
 import { getSourceExt, walkDir } from "../utils/paths.js";
 
+// 🎯 Event handler interface
 interface Event {
 	name: string;
 	once?: boolean;
@@ -12,8 +13,13 @@ interface Event {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// 📋 Event handler configuration
+const EVENT_CONFIG = {
+	BASE_DIR: "../events",
+} as const;
+
 export async function loadEvents(client: Client): Promise<void> {
-	const eventsDir = join(__dirname, "../events");
+	const eventsDir = join(__dirname, EVENT_CONFIG.BASE_DIR);
 	const ext = getSourceExt(import.meta.url);
 	const files = walkDir(eventsDir, ext);
 

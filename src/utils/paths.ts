@@ -2,12 +2,20 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// 🔍 File extension detection constants
+const SOURCE_EXTENSIONS = {
+	TYPESCRIPT: ".ts",
+	JAVASCRIPT: ".js",
+} as const;
+
 export function getSourceExt(importMetaUrl: string): string {
-	return fileURLToPath(importMetaUrl).endsWith(".ts") ? ".ts" : ".js";
+	return fileURLToPath(importMetaUrl).endsWith(SOURCE_EXTENSIONS.TYPESCRIPT)
+		? SOURCE_EXTENSIONS.TYPESCRIPT
+		: SOURCE_EXTENSIONS.JAVASCRIPT;
 }
 
 /**
- * Recursively walks `dir` and returns the absolute paths of all files
+ * 📂 Recursively walks `dir` and returns the absolute paths of all files
  * whose names end with `ext`. Throws if the directory cannot be read.
  */
 export function walkDir(dir: string, ext: string): string[] {
@@ -17,7 +25,7 @@ export function walkDir(dir: string, ext: string): string[] {
 	try {
 		entries = readdirSync(dir);
 	} catch (err) {
-		throw new Error(`Failed to read directory: ${dir}`, { cause: err });
+		throw new Error(`❌ Failed to read directory: ${dir}`, { cause: err });
 	}
 
 	for (const entry of entries) {
@@ -29,7 +37,7 @@ export function walkDir(dir: string, ext: string): string[] {
 				results.push(fullPath);
 			}
 		} catch (err) {
-			throw new Error(`Failed to stat path: ${fullPath}`, { cause: err });
+			throw new Error(`❌ Failed to stat path: ${fullPath}`, { cause: err });
 		}
 	}
 	return results;

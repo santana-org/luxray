@@ -1,22 +1,32 @@
 import { createLogger } from "@santana-org/logger";
 
+// 🎨 Logger configuration constants
+const LOGGER_CONFIG = {
+	LEVEL: "info",
+	LABEL: "Luxray 🌟",
+	TIMESTAMPS: true,
+	DATE_FORMAT: "datetime",
+	REDACT_KEYS: ["token", "password", "secret"] as string[],
+} as const;
+
 export const logger = createLogger({
-	level: "info",
-	label: "Luxray",
-	timestamps: true,
-	dateFormat: "datetime",
-	redact: ["token", "password", "secret"],
+	level: LOGGER_CONFIG.LEVEL,
+	label: LOGGER_CONFIG.LABEL,
+	timestamps: LOGGER_CONFIG.TIMESTAMPS,
+	dateFormat: LOGGER_CONFIG.DATE_FORMAT,
+	redact: LOGGER_CONFIG.REDACT_KEYS,
 });
 
+// 📊 Log message templates
 export const LOGS = {
-	BOT_READY: (tag: string) => `🤖 Ready — logged in as ${tag}`,
+	BOT_READY: (tag: string) => `🤖 Bot ready — logged in as ${tag}`,
 	EVENTS_LOADED: (count: number) => `📡 Events loaded: ${count}`,
 	COMMANDS_LOADED: (count: number) => `🔧 Commands loaded: ${count}`,
 	COMMANDS_REGISTERED: (count: number, scope: string) =>
 		`✅ Slash commands registered: ${count} (${scope})`,
 	BOOT_FAILED: "❌ Failed to start bot",
 	UNKNOWN_COMMAND: (name: string) => `❓ Unknown slash command: ${name}`,
-	COMMAND_ERROR: (name: string) => `❌ Error in slash command: ${name}`,
+	COMMAND_ERROR: (name: string) => `⚡ Error in slash command: ${name}`,
 	UNKNOWN_PREFIX_CMD: (name: string) => `❓ Unknown prefix command: ${name}`,
-	PREFIX_CMD_ERROR: (name: string) => `❌ Error in prefix command: ${name}`,
-};
+	PREFIX_CMD_ERROR: (name: string) => `⚡ Error in prefix command: ${name}`,
+} as const;

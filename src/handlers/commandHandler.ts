@@ -12,8 +12,15 @@ import { getSourceExt, walkDir } from "../utils/paths.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// 📋 Command handler configuration
+const COMMAND_CONFIG = {
+	BASE_DIR: "../commands",
+	SCOPE_GUILD: "guild",
+	SCOPE_GLOBAL: "global",
+} as const;
+
 export async function loadCommands(client: Client): Promise<void> {
-	const commandsDir = join(__dirname, "../commands");
+	const commandsDir = join(__dirname, COMMAND_CONFIG.BASE_DIR);
 	const ext = getSourceExt(import.meta.url);
 	const files = walkDir(commandsDir, ext);
 	const commandData: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
@@ -33,7 +40,9 @@ async function registerCommands(
 ): Promise<void> {
 	const rest = new REST().setToken(config.token);
 
-	const scope = config.guildId ? "guild" : "global";
+	const scope = config.guildId
+		? COMMAND_CONFIG.SCOPE_GUILD
+		: COMMAND_CONFIG.SCOPE_GLOBAL;
 	const route = config.guildId
 		? Routes.applicationGuildCommands(config.clientId, config.guildId)
 		: Routes.applicationCommands(config.clientId);
