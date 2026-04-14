@@ -31,3 +31,6 @@ coverage/
 
 # Runtime
 .husky/_
+
+# DB
+db/
