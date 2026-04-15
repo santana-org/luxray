@@ -34,3 +34,5 @@ coverage/
 
 # DB
 db/
+
+/src/generated/prisma

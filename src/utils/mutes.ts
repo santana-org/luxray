@@ -1,111 +1,56 @@
 /**
- * Mute Management System with SQLite Persistence & Hybrid Expiration
+ * Mute System - Prisma-based Persistent Storage
  *
- * Handles storing, retrieving, and managing mute records with persistent storage.
- * Mutes survive bot restarts and are stored in a local SQLite database.
- *
- * Expiration strategy (hybrid):
- * - Mutes < 24h: Individual setTimeout timers for exact expiration (zero polling)
- * - Mutes >= 24h: Periodic polling every 5 minutes as safety net
- * - On startup: Reconstruct timers from database for all active mutes
- *
- * Database schema:
- * - guildId: Discord server ID
- * - userId: Muted user ID
- * - muteEndTime: Unix timestamp (ms) when mute expires
- * - mutedBy: ID of user who applied the mute
- * - reason: Optional reason string
- * - muteStartTime: Unix timestamp (ms) when mute was applied
+ * Manages temporary member muting with:
+ * - SQLite persistence via Prisma ORM
+ * - Hybrid expiration strategy (timers for short mutes, polling for long ones)
+ * - Automatic cleanup on bot startup
+ * - Graceful DM notifications
  */
 
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import Database from "better-sqlite3";
 import type { Client } from "discord.js";
+import { prisma } from "./database.js";
 import { logger } from "./logger.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, "..", "..", "db", "mutes.db");
-
-// Initialize database connection
-let db: Database.Database;
-
-// Timer storage for short-duration mutes (< 24h)
-// Key: "guildId:userId", Value: setTimeout handle
-const muteTimers = new Map<string, NodeJS.Timeout>();
-
-// Threshold: mutes shorter than this use individual timers, longer ones use polling
 const SHORT_MUTE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+const POLLING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+// const MAX_DURATION_MS = 28 * 24 * 60 * 60 * 1000; // 28 days max - used in parseDuration
 
-export function initializeMuteDatabase(): void {
+// Map to track active timers for short mutes
+const muteTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+/**
+ * Initialize mute system from database
+ * Reconstructs all active timers from persisted mutes
+ */
+export async function initializeMuteSystem(client: Client): Promise<void> {
 	try {
-		db = new Database(dbPath);
-		db.pragma("journal_mode = WAL");
+		const activeMutes = await prisma.mute.findMany();
+		logger.info(
+			`[Mutes] Loading ${activeMutes.length} active mutes from database`,
+		);
 
-		// Create mutes table if it doesn't exist
-		db.exec(`
-			CREATE TABLE IF NOT EXISTS mutes (
-				guildId TEXT NOT NULL,
-				userId TEXT NOT NULL,
-				muteEndTime INTEGER NOT NULL,
-				mutedBy TEXT NOT NULL,
-				reason TEXT,
-				muteStartTime INTEGER NOT NULL,
-				PRIMARY KEY (guildId, userId)
-			);
+		for (const mute of activeMutes) {
+			const remaining = Number(mute.muteEndTime) - Date.now();
+			if (remaining > 0) {
+				scheduleMuteExpiration(mute.guildId, mute.userId, remaining, client);
+			} else {
+				// Expired, clean up
+				await expireMute(mute.guildId, mute.userId, client);
+			}
+		}
 
-			CREATE INDEX IF NOT EXISTS idx_guildId ON mutes(guildId);
-			CREATE INDEX IF NOT EXISTS idx_muteEndTime ON mutes(muteEndTime);
-		`);
-
-		logger.info("✅ Mute database initialized");
+		logger.info("[Mutes] Mute system initialized successfully");
 	} catch (error) {
-		logger.error("Failed to initialize mute database", error);
+		logger.error("[Mutes] Failed to initialize mute system", error);
 		throw error;
 	}
 }
 
-interface MuteRecord {
-	muteEndTime: number;
-	mutedBy: string;
-	reason: string | null;
-	muteStartTime: number;
-}
-
 /**
- * Add or update a mute record (persisted to database)
- * Schedules expiration timer for short mutes (< 24h)
- */
-export function addMute(
-	guildId: string,
-	userId: string,
-	mutedBy: string,
-	durationMs: number,
-	reason: string | null = null,
-	client?: Client,
-): void {
-	if (!db) throw new Error("Mute database not initialized");
-
-	const muteStartTime = Date.now();
-	const muteEndTime = muteStartTime + durationMs;
-
-	const stmt = db.prepare(`
-		INSERT OR REPLACE INTO mutes
-		(guildId, userId, muteEndTime, mutedBy, reason, muteStartTime)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`);
-
-	stmt.run(guildId, userId, muteEndTime, mutedBy, reason, muteStartTime);
-
-	// Schedule expiration timer if duration is short enough (< 24h)
-	if (durationMs <= SHORT_MUTE_THRESHOLD && client) {
-		scheduleMuteExpiration(guildId, userId, durationMs, client);
-	}
-}
-
-/**
- * Schedule individual timer for mute expiration
- * Used only for mutes < 24h to avoid Node.js setTimeout limits
+ * Schedule mute expiration with hybrid strategy
+ * - Short mutes: Individual setTimeout for exact expiration
+ * - Long mutes: Rely on polling for safety net
  */
 function scheduleMuteExpiration(
 	guildId: string,
@@ -117,205 +62,289 @@ function scheduleMuteExpiration(
 
 	// Clear existing timer if any
 	if (muteTimers.has(key)) {
-		const existingTimer = muteTimers.get(key);
-		if (existingTimer) clearTimeout(existingTimer);
+		const timer = muteTimers.get(key);
+		if (timer) clearTimeout(timer);
 	}
 
-	// Schedule new timer to trigger at exact expiration time
-	const timer = setTimeout(async () => {
-		try {
-			// Remove mute role from member
-			const guild = client.guilds.cache.get(guildId);
-			if (guild) {
-				const member = await guild.members.fetch(userId).catch(() => null);
+	// Use timer for short mutes (< 24h) for exact expiration
+	if (durationMs <= SHORT_MUTE_THRESHOLD) {
+		const timer = setTimeout(async () => {
+			try {
+				await expireMute(guildId, userId, client);
+			} catch (error) {
+				logger.error(
+					`[Mutes] Failed to expire mute ${guildId}:${userId}`,
+					error,
+				);
+			}
+		}, durationMs);
 
-				if (member) {
-					const muteRoleId = process.env.MUTE_ROLE_ID;
-					if (muteRoleId) {
-						const muteRole = guild.roles.cache.get(muteRoleId);
-						if (muteRole && member.roles.cache.has(muteRoleId)) {
-							await member.roles.remove(muteRole, "Mute expired");
-						}
+		muteTimers.set(key, timer);
+	}
+	// Long mutes handled by polling (see muteExpiration event)
+}
+
+/**
+ * Add a new mute to the system
+ */
+export async function addMute(
+	guildId: string,
+	userId: string,
+	moderatorId: string,
+	durationMs: number,
+	reason: string | null,
+	client: Client,
+	muteRoleId: string,
+): Promise<void> {
+	const muteEndTime = Date.now() + durationMs;
+
+	try {
+		await prisma.mute.upsert({
+			where: {
+				guildId_userId: {
+					guildId,
+					userId,
+				},
+			},
+			update: {
+				muteEndTime: BigInt(muteEndTime),
+				reason,
+				muteRoleId,
+				mutedBy: moderatorId,
+				updatedAt: new Date(),
+			},
+			create: {
+				guildId,
+				userId,
+				muteStartTime: BigInt(Date.now()),
+				muteEndTime: BigInt(muteEndTime),
+				reason,
+				muteRoleId,
+				mutedBy: moderatorId,
+			},
+		});
+
+		// Schedule expiration
+		scheduleMuteExpiration(guildId, userId, durationMs, client);
+
+		logger.info(
+			`[Mutes] Added mute for ${userId} in guild ${guildId} (${formatTimeRemaining(durationMs)})`,
+		);
+	} catch (error) {
+		logger.error(`[Mutes] Failed to add mute for ${userId}`, error);
+		throw error;
+	}
+}
+
+/**
+ * Remove a mute from the system
+ */
+export async function removeMute(
+	guildId: string,
+	userId: string,
+): Promise<void> {
+	try {
+		const key = `${guildId}:${userId}`;
+		const timer = muteTimers.get(key);
+		if (timer) {
+			clearTimeout(timer);
+			muteTimers.delete(key);
+		}
+
+		await prisma.mute.delete({
+			where: {
+				guildId_userId: {
+					guildId,
+					userId,
+				},
+			},
+		});
+
+		logger.info(`[Mutes] Removed mute for ${userId} in guild ${guildId}`);
+	} catch (error) {
+		// P2025 = "An operation failed because it depends on one or more records that were required but not found"
+		// This is fine - the mute might have already been deleted or never existed
+		const isP2025 =
+			(error instanceof Error && error.message.includes("P2025")) ||
+			(error &&
+				typeof error === "object" &&
+				"code" in error &&
+				error.code === "P2025");
+
+		if (isP2025) {
+			// Record doesn't exist, silently ignore
+			return;
+		}
+		logger.warn(`[Mutes] Error removing mute for ${userId}:`, error);
+	}
+}
+
+/**
+ * Get all active mutes for a guild
+ */
+export async function getMutedUsers(guildId: string): Promise<
+	Array<{
+		userId: string;
+		muteStartTime: number;
+		muteEndTime: number;
+		reason: string | null;
+		mutedBy: string;
+	}>
+> {
+	try {
+		const mutes = await prisma.mute.findMany({
+			where: { guildId },
+		});
+
+		return mutes.map((m: any) => ({
+			userId: m.userId,
+			muteStartTime: Number(m.muteStartTime),
+			muteEndTime: Number(m.muteEndTime),
+			reason: m.reason,
+			mutedBy: m.mutedBy,
+		}));
+	} catch (error) {
+		logger.error(
+			`[Mutes] Failed to get muted users for guild ${guildId}`,
+			error,
+		);
+		return [];
+	}
+}
+
+/**
+ * Check and expire mutes that should no longer be active
+ * Called periodically by muteExpiration event for long mutes
+ */
+export async function checkAndExpireOldMutes(client: Client): Promise<void> {
+	try {
+		const now = BigInt(Date.now());
+		const expiredMutes = await prisma.mute.findMany({
+			where: {
+				muteEndTime: {
+					lt: now,
+				},
+			},
+		});
+
+		for (const mute of expiredMutes) {
+			try {
+				await expireMute(mute.guildId, mute.userId, client);
+			} catch (error) {
+				logger.error(
+					`[Mutes] Failed to expire mute ${mute.guildId}:${mute.userId}`,
+					error,
+				);
+			}
+		}
+
+		if (expiredMutes.length > 0) {
+			logger.info(`[Mutes] Expired ${expiredMutes.length} mutes`);
+		}
+	} catch (error) {
+		logger.error("[Mutes] Failed to check expired mutes", error);
+	}
+}
+
+/**
+ * Expire a specific mute (remove role and clear tracking)
+ */
+async function expireMute(
+	guildId: string,
+	userId: string,
+	client: Client,
+): Promise<void> {
+	const key = `${guildId}:${userId}`;
+
+	try {
+		// Fetch mute record first - we need this regardless
+		const mute = await prisma.mute.findUnique({
+			where: {
+				guildId_userId: {
+					guildId,
+					userId,
+				},
+			},
+		});
+
+		if (!mute) {
+			// Mute record doesn't exist, clean up and return
+			const timer = muteTimers.get(key);
+			if (timer) {
+				clearTimeout(timer);
+				muteTimers.delete(key);
+			}
+			return;
+		}
+
+		// Try to remove the role from the member
+		try {
+			const guild = await client.guilds.fetch(guildId);
+			const member = await guild.members.fetch(userId).catch(() => null);
+
+			if (member) {
+				// Fetch the role to ensure it exists
+				const muteRole = await guild.roles
+					.fetch(mute.muteRoleId)
+					.catch(() => null);
+				if (muteRole) {
+					// Check if member still has the role
+					const hasMuteRole = member.roles.cache.has(mute.muteRoleId);
+					if (hasMuteRole) {
+						await member.roles
+							.remove(muteRole, "Mute expired")
+							.catch((error) => {
+								logger.warn(
+									`[Mutes] Failed to remove mute role from ${userId}:`,
+									error,
+								);
+							});
 					}
 				}
 			}
-
-			// Remove from database
-			removeMute(guildId, userId);
-			muteTimers.delete(key);
-			logger.debug(`Mute expired for user ${userId} in guild ${guildId}`);
 		} catch (error) {
-			logger.error(
-				`Error expiring mute for user ${userId} in guild ${guildId}`,
-				error,
-			);
+			// Log role removal failures but don't stop - we still need to clean up the DB
+			logger.warn(`[Mutes] Error during role removal for ${userId}:`, error);
 		}
-	}, durationMs);
 
-	muteTimers.set(key, timer);
-}
-
-/**
- * Reconstruct mute timers from database on bot startup
- * Called after bot is ready to rebuild timers for all active mutes
- */
-export function reconstructMuteTimersFromDatabase(client: Client): void {
-	if (!db) throw new Error("Mute database not initialized");
-
-	const now = Date.now();
-	const stmt = db.prepare(
-		"SELECT guildId, userId, muteEndTime FROM mutes WHERE muteEndTime > ?",
-	);
-
-	const activeMutes = stmt.all(now) as Array<{
-		guildId: string;
-		userId: string;
-		muteEndTime: number;
-	}>;
-
-	let timerCount = 0;
-	for (const mute of activeMutes) {
-		const timeRemaining = mute.muteEndTime - now;
-
-		// Only create timers for short mutes
-		if (timeRemaining <= SHORT_MUTE_THRESHOLD) {
-			scheduleMuteExpiration(mute.guildId, mute.userId, timeRemaining, client);
-			timerCount++;
-		}
-	}
-
-	if (timerCount > 0) {
-		logger.info(`📋 Reconstructed ${timerCount} mute timers from database`);
-	}
-}
-
-/**
- * Remove a mute record (persisted)
- */
-export function removeMute(guildId: string, userId: string): boolean {
-	if (!db) throw new Error("Mute database not initialized");
-
-	// Clear any pending timer
-	const key = `${guildId}:${userId}`;
-	if (muteTimers.has(key)) {
+		// Clear timer
 		const timer = muteTimers.get(key);
-		if (timer) clearTimeout(timer);
-		muteTimers.delete(key);
+		if (timer) {
+			clearTimeout(timer);
+			muteTimers.delete(key);
+		}
+
+		// Remove from database - this will be a no-op if already deleted
+		await removeMute(guildId, userId);
+	} catch (error) {
+		logger.error(`[Mutes] Failed to expire mute ${guildId}:${userId}:`, error);
 	}
-
-	const stmt = db.prepare("DELETE FROM mutes WHERE guildId = ? AND userId = ?");
-	const result = stmt.run(guildId, userId);
-
-	return result.changes > 0;
 }
 
 /**
- * Get mute record for a user
- * Returns null if not muted or mute is expired
- */
-export function getMute(guildId: string, userId: string): MuteRecord | null {
-	if (!db) throw new Error("Mute database not initialized");
-
-	const now = Date.now();
-	const stmt = db.prepare(
-		"SELECT muteEndTime, mutedBy, reason, muteStartTime FROM mutes WHERE guildId = ? AND userId = ? AND muteEndTime > ?",
-	);
-
-	const result = stmt.get(guildId, userId, now) as
-		| (MuteRecord & {
-				muteEndTime: number;
-				mutedBy: string;
-				muteStartTime: number;
-		  })
-		| undefined;
-
-	return result ?? null;
-}
-
-/**
- * Check if user is currently muted
- */
-export function isMuted(guildId: string, userId: string): boolean {
-	return getMute(guildId, userId) !== null;
-}
-
-/**
- * Get all muted users in a guild (only non-expired)
- */
-export function getMutedUsers(guildId: string): Array<{
-	userId: string;
-	record: MuteRecord;
-	timeRemaining: number;
-}> {
-	if (!db) throw new Error("Mute database not initialized");
-
-	const now = Date.now();
-	const stmt = db.prepare(
-		"SELECT userId, muteEndTime, mutedBy, reason, muteStartTime FROM mutes WHERE guildId = ? AND muteEndTime > ? ORDER BY muteEndTime ASC",
-	);
-
-	const results = stmt.all(guildId, now) as Array<{
-		userId: string;
-		muteEndTime: number;
-		mutedBy: string;
-		reason: string | null;
-		muteStartTime: number;
-	}>;
-
-	return results.map((row) => ({
-		userId: row.userId,
-		record: {
-			muteEndTime: row.muteEndTime,
-			mutedBy: row.mutedBy,
-			reason: row.reason,
-			muteStartTime: row.muteStartTime,
-		},
-		timeRemaining: row.muteEndTime - now,
-	}));
-}
-
-/**
- * Clean up all expired mutes from database
- * Returns count of mutes removed
- */
-export function cleanupExpiredMutes(): number {
-	if (!db) throw new Error("Mute database not initialized");
-
-	const now = Date.now();
-	const stmt = db.prepare("DELETE FROM mutes WHERE muteEndTime <= ?");
-	const result = stmt.run(now);
-
-	return result.changes;
-}
-
-/**
- * Format milliseconds to readable time string
- * e.g., 3661000 -> "1h 1m 1s"
+ * Format time remaining (ms -> human readable)
  */
 export function formatTimeRemaining(ms: number): string {
-	if (ms <= 0) return "Expired";
+	const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+	const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+	const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+	const seconds = Math.floor((ms % (60 * 1000)) / 1000);
 
-	const seconds = Math.floor((ms / 1000) % 60);
-	const minutes = Math.floor((ms / (1000 * 60)) % 60);
-	const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-	const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-
-	const parts: string[] = [];
+	const parts = [];
 	if (days > 0) parts.push(`${days}d`);
 	if (hours > 0) parts.push(`${hours}h`);
 	if (minutes > 0) parts.push(`${minutes}m`);
-	if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+	if (seconds > 0 && parts.length === 0) parts.push(`${seconds}s`);
 
-	return parts.join(" ");
+	return parts.join(" ") || "0s";
 }
 
 /**
  * Parse duration string to milliseconds
- * Accepts formats like: "1h", "30m", "1h30m", "2d", etc.
- * Maximum duration: 28 days
+ * Supports formats: "1h", "30m", "2d", "1h30m", "1d2h30m15s"
  */
 export function parseDuration(input: string): number | null {
-	const MAX_DURATION_MS = 28 * 24 * 60 * 60 * 1000; // 28 days max
+	const MAX_DURATION_MS_LOCAL = 28 * 24 * 60 * 60 * 1000; // 28 days max
 	const regex = /(\d+)\s*([dhms])/gi;
 	let totalMs = 0;
 
@@ -343,20 +372,37 @@ export function parseDuration(input: string): number | null {
 	}
 
 	// Validate: must be positive and not exceed max
-	if (totalMs <= 0 || totalMs > MAX_DURATION_MS) return null;
+	if (totalMs <= 0 || totalMs > MAX_DURATION_MS_LOCAL) return null;
 
 	return totalMs;
 }
 
 /**
  * Convert Unix timestamp (ms) to Discord timestamp format
- * Discord renders this in the user's local timezone
- * Format: <t:1234567890:f> = "November 4, 2009 7:14 PM"
+ * Format: <t:1234567890:f> renders as localized time for each user
+ * Format options: t (short time), T (long time), d (short date), D (long date), f (short date+time), F (long date+time), R (relative)
  */
-export function toDiscordTimestamp(
-	ms: number,
-	format: "t" | "T" | "d" | "D" | "f" | "F" | "R" = "f",
-): string {
-	const seconds = Math.floor(ms / 1000);
-	return `<t:${seconds}:${format}>`;
+export function discordTimestamp(ms: number, format: string = "f"): string {
+	return `<t:${Math.floor(ms / 1000)}:${format}>`;
+}
+
+// Alias for backwards compatibility
+export const toDiscordTimestamp = discordTimestamp;
+
+/**
+ * Get polling interval for mute expiration checks
+ */
+export function getPollingInterval(): number {
+	return POLLING_INTERVAL;
+}
+
+/**
+ * Cleanup on shutdown
+ */
+export async function cleanupMuteSystem(): Promise<void> {
+	for (const timer of muteTimers.values()) {
+		clearTimeout(timer);
+	}
+	muteTimers.clear();
+	logger.info("[Mutes] Mute system cleaned up");
 }

@@ -224,6 +224,7 @@ export default {
 				durationMs,
 				reason,
 				interaction.client,
+				muteRoleId,
 			);
 
 			// Send success message

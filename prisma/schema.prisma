@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Mute {
+  id            String   @id @default(cuid())
+  guildId       String
+  userId        String
+  muteStartTime BigInt
+  muteEndTime   BigInt
+  reason        String?
+  muteRoleId    String
+  mutedBy       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([guildId, userId])
+  @@index([guildId])
+  @@index([userId])
+  @@index([muteEndTime])
+  @@map("mutes")
+}
+
+model ModerationLog {
+  id          String   @id @default(cuid())
+  guildId     String
+  userId      String
+  action      String
+  reason      String?
+  moderatorId String
+  createdAt   DateTime @default(now())
+
+  @@index([guildId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("moderation_logs")
+}

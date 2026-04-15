@@ -99,7 +99,7 @@ export default {
 			const itemsPerPage = 10;
 
 			// Get all muted users in guild
-			const mutedUsers = getMutedUsers(interaction.guild?.id ?? "");
+			const mutedUsers = await getMutedUsers(interaction.guild?.id ?? "");
 
 			if (mutedUsers.length === 0) {
 				const noMutesEmbed = new EmbedBuilder()
@@ -132,12 +132,12 @@ export default {
 				.setTimestamp();
 
 			// Add muted users to embed as fields
-			for (const { userId, record, timeRemaining } of pageItems) {
+			for (const record of pageItems) {
 				// Fetch user to get username (fallback to ID if unavailable)
-				let userDisplay = `<@${userId}>`;
+				let userDisplay = `<@${record.userId}>`;
 				try {
 					const user = await interaction.client.users
-						.fetch(userId)
+						.fetch(record.userId)
 						.catch(() => null);
 					if (user) {
 						userDisplay = `${user.username}#${user.discriminator === "0" ? "0000" : user.discriminator}`;
@@ -146,6 +146,7 @@ export default {
 					// Fallback to ID mention if fetch fails
 				}
 
+				const timeRemaining = record.muteEndTime - Date.now();
 				let fieldValue = `**Muted By:** <@${record.mutedBy}>\n`;
 				fieldValue += `**Started:** ${toDiscordTimestamp(record.muteStartTime, "f")}\n`;
 				fieldValue += `**Expires In:** ${formatTimeRemaining(timeRemaining)}`;
