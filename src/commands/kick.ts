@@ -20,17 +20,19 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import type { Command } from "@/types/command.js";
-import { validatePermissions } from "@/utils/embeds/embeds.js";
-import { sendModerationSuccess } from "@/utils/embeds/moderationEmbeds.js";
-import { sendModerationDM } from "@/utils/moderation/dmNotification.js";
-import { handleModerationError } from "@/utils/moderation/errorHandler.js";
+import {
+	sendModerationSuccess,
+	validatePermissions,
+} from "@/utils/embeds/index.js";
 import {
 	fetchTargetMember,
+	handleModerationError,
+	sendModerationDM,
 	validateBotPermission,
 	validateGuildContext,
 	validateModerationTarget,
 	validateRoleHierarchy,
-} from "@/utils/moderation/moderationValidation.js";
+} from "@/utils/moderation/index.js";
 
 /**
  * Configuration object for kick command

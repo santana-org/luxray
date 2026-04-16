@@ -25,14 +25,14 @@ import {
 	SlashCommandBuilder,
 } from "discord.js";
 import type { Command } from "@/types/command.js";
-import { validatePermissions } from "@/utils/embeds/embeds.js";
-import { handleModerationError } from "@/utils/moderation/errorHandler.js";
-import { validateGuildContext } from "@/utils/moderation/moderationValidation.js";
+import { validatePermissions } from "@/utils/embeds/index.js";
 import {
 	formatTimeRemaining,
 	getMutedUsers,
+	handleModerationError,
 	toDiscordTimestamp,
-} from "@/utils/moderation/mutes.js";
+	validateGuildContext,
+} from "@/utils/moderation/index.js";
 
 /**
  * Configuration object for muted-list command

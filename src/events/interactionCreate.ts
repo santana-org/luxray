@@ -16,7 +16,7 @@
 
 import { Events, type Interaction } from "discord.js";
 import { client } from "@/core/client.js";
-import { LOGS, logger } from "@/utils/logger/logger.js";
+import { LOGS, logger } from "@/utils/logger/index.js";
 
 // Error response configuration
 const ERROR_RESPONSES = {

@@ -19,13 +19,19 @@
 import type { ChatInputCommandInteraction, Guild } from "discord.js";
 import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import type { Command } from "@/types/command.js";
-import { sendError, validatePermissions } from "@/utils/embeds/embeds.js";
-import { sendModerationSuccess } from "@/utils/embeds/moderationEmbeds.js";
-import { sendModerationDM } from "@/utils/moderation/dmNotification.js";
-import { handleModerationError } from "@/utils/moderation/errorHandler.js";
-import { validateGuildContext } from "@/utils/moderation/moderationValidation.js";
-import { getMuteRole, getMuteRoleId } from "@/utils/moderation/muteConfig.js";
-import { removeMute } from "@/utils/moderation/mutes.js";
+import {
+	sendError,
+	sendModerationSuccess,
+	validatePermissions,
+} from "@/utils/embeds/index.js";
+import {
+	getMuteRole,
+	getMuteRoleId,
+	handleModerationError,
+	removeMute,
+	sendModerationDM,
+	validateGuildContext,
+} from "@/utils/moderation/index.js";
 
 /**
  * Configuration object for unmute command

@@ -9,8 +9,8 @@
  */
 
 import type { Client } from "discord.js";
-import { prisma } from "@/utils/database/database.js";
-import { logger } from "@/utils/logger/logger.js";
+import { prisma } from "@/utils/database/index.js";
+import { logger } from "@/utils/logger/index.js";
 
 const SHORT_MUTE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
 const POLLING_INTERVAL = 5 * 60 * 1000; // 5 minutes
