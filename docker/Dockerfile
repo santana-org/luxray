@@ -6,8 +6,12 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
+COPY prisma ./prisma
+COPY prisma.config.ts ./
 COPY src ./src
 COPY tsconfig.json ./
+
+RUN pnpm prisma generate
 RUN pnpm run build
 
 FROM node:20-alpine
