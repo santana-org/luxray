@@ -10,7 +10,7 @@
 
 import type { Client } from "discord.js";
 import { prisma } from "@/utils/database/index.js";
-import { logger } from "@/utils/logger/index.js";
+import { LOGS, logger } from "@/utils/logger/index.js";
 
 const SHORT_MUTE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
 const POLLING_INTERVAL = 5 * 60 * 1000; // 5 minutes
@@ -51,13 +51,13 @@ export async function initializeMuteSystem(client: Client): Promise<void> {
 			try {
 				await checkAndExpireOldMutes(client);
 			} catch (error) {
-				logger.error("[Mutes] Polling error during expiration check", error);
+				logger.error(LOGS.MUTES_POLLING_ERROR, error);
 			}
 		}, POLLING_INTERVAL);
 
-		logger.info("[Mutes] Mute system initialized successfully");
+		logger.info(LOGS.MUTES_INITIALIZED);
 	} catch (error) {
-		logger.error("[Mutes] Failed to initialize mute system", error);
+		logger.error(LOGS.MUTES_INIT_FAILED, error);
 		throw error;
 	}
 }
@@ -254,10 +254,10 @@ export async function checkAndExpireOldMutes(client: Client): Promise<void> {
 		}
 
 		if (expiredMutes.length > 0) {
-			logger.info(`[Mutes] Expired ${expiredMutes.length} mutes`);
+			logger.info(LOGS.MUTES_EXPIRED(expiredMutes.length));
 		}
 	} catch (error) {
-		logger.error("[Mutes] Failed to check expired mutes", error);
+		logger.error(LOGS.MUTES_CHECK_FAILED, error);
 	}
 }
 
@@ -443,5 +443,5 @@ export async function cleanupMuteSystem(): Promise<void> {
 		clearTimeout(timer);
 	}
 	muteTimers.clear();
-	logger.info("[Mutes] Mute system cleaned up");
+	logger.info(LOGS.MUTES_CLEANED_UP);
 }

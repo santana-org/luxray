@@ -12,7 +12,7 @@
  */
 
 import type { Message } from "discord.js";
-import { logger } from "@/utils/logger/index.js";
+import { LOGS, logger } from "@/utils/logger/index.js";
 
 /**
  * Filter factory object: each method returns a predicate function
@@ -113,5 +113,5 @@ export const applyFilter = (
  */
 export const logError = (context: string, error: unknown): void => {
 	const errorMessage = error instanceof Error ? error.message : String(error);
-	logger.error(`[${context}] Error:`, errorMessage, error);
+	logger.error(LOGS.ERROR_CONTEXT(context), errorMessage, error);
 };
