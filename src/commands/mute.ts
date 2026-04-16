@@ -217,7 +217,7 @@ export default {
 			);
 
 			// Record mute in tracking system and schedule expiration
-			addMute(
+			await addMute(
 				interaction.guild?.id ?? "",
 				targetUser.id,
 				interaction.user.id,

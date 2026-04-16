@@ -3,7 +3,7 @@
  *
  * Centralized mute role management:
  * - Environment variable validation
- * - Role cache lookups with error handling
+ * - Role lookups with error handling
  * - Consistent error messages for missing config
  *
  * Eliminates ~40+ lines of duplicate config code
@@ -19,7 +19,6 @@ export async function getMuteRoleId(
 	interaction?: ChatInputCommandInteraction,
 ): Promise<string | null> {
 	const muteRoleId = process.env.MUTE_ROLE_ID;
-
 	if (!muteRoleId && interaction) {
 		await sendError(
 			interaction,
@@ -27,7 +26,6 @@ export async function getMuteRoleId(
 			"Mute role is not configured. Please contact server administrators.",
 		);
 	}
-
 	return muteRoleId ?? null;
 }
 
@@ -46,15 +44,18 @@ export function requireMuteRoleId(): string {
 }
 
 /**
- * Get mute role from guild cache
+ * Get mute role from guild
+ * Uses fetch instead of cache.get to ensure role is always up-to-date
  */
 export async function getMuteRole(
 	guild: Guild,
 	muteRoleId: string,
 	interaction?: ChatInputCommandInteraction,
 ): Promise<Role | null> {
-	const muteRole = guild.roles.cache.get(muteRoleId);
-
+	// Use fetch with force:true to bypass stale cache
+	const muteRole = await guild.roles
+		.fetch(muteRoleId, { force: true })
+		.catch(() => null);
 	if (!muteRole && interaction) {
 		await sendError(
 			interaction,
@@ -62,13 +63,12 @@ export async function getMuteRole(
 			"Mute role not found in this server.",
 		);
 	}
-
 	return muteRole ?? null;
 }
 
 /**
  * Validate mute role is properly configured
- * Checks both environment variable and guild role cache
+ * Checks both environment variable and guild role
  */
 export async function validateMuteRoleConfiguration(
 	guild: Guild,

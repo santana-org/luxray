@@ -19,6 +19,9 @@ const POLLING_INTERVAL = 5 * 60 * 1000; // 5 minutes
 // Map to track active timers for short mutes
 const muteTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+// Reference to polling interval so it can be cleared on shutdown
+let pollingTimer: ReturnType<typeof setInterval> | null = null;
+
 /**
  * Initialize mute system from database
  * Reconstructs all active timers from persisted mutes
@@ -35,10 +38,22 @@ export async function initializeMuteSystem(client: Client): Promise<void> {
 			if (remaining > 0) {
 				scheduleMuteExpiration(mute.guildId, mute.userId, remaining, client);
 			} else {
-				// Expired, clean up
+				// Expired while bot was offline, clean up immediately
 				await expireMute(mute.guildId, mute.userId, client);
 			}
 		}
+
+		// Start polling for long mutes (> 24h) that don't use setTimeout
+		if (pollingTimer) {
+			clearInterval(pollingTimer);
+		}
+		pollingTimer = setInterval(async () => {
+			try {
+				await checkAndExpireOldMutes(client);
+			} catch (error) {
+				logger.error("[Mutes] Polling error during expiration check", error);
+			}
+		}, POLLING_INTERVAL);
 
 		logger.info("[Mutes] Mute system initialized successfully");
 	} catch (error) {
@@ -50,7 +65,7 @@ export async function initializeMuteSystem(client: Client): Promise<void> {
 /**
  * Schedule mute expiration with hybrid strategy
  * - Short mutes: Individual setTimeout for exact expiration
- * - Long mutes: Rely on polling for safety net
+ * - Long mutes: Rely on polling interval started in initializeMuteSystem
  */
 function scheduleMuteExpiration(
 	guildId: string,
@@ -81,7 +96,7 @@ function scheduleMuteExpiration(
 
 		muteTimers.set(key, timer);
 	}
-	// Long mutes handled by polling (see muteExpiration event)
+	// Long mutes are handled by the polling interval in initializeMuteSystem
 }
 
 /**
@@ -214,7 +229,7 @@ export async function getMutedUsers(guildId: string): Promise<
 
 /**
  * Check and expire mutes that should no longer be active
- * Called periodically by muteExpiration event for long mutes
+ * Called by polling interval for long mutes (> 24h)
  */
 export async function checkAndExpireOldMutes(client: Client): Promise<void> {
 	try {
@@ -257,7 +272,7 @@ async function expireMute(
 	const key = `${guildId}:${userId}`;
 
 	try {
-		// Fetch mute record first - we need this regardless
+		// Fetch mute record first - we need the muteRoleId
 		const mute = await prisma.mute.findUnique({
 			where: {
 				guildId_userId: {
@@ -268,7 +283,7 @@ async function expireMute(
 		});
 
 		if (!mute) {
-			// Mute record doesn't exist, clean up and return
+			// Mute record doesn't exist, clean up timer and return
 			const timer = muteTimers.get(key);
 			if (timer) {
 				clearTimeout(timer);
@@ -280,17 +295,21 @@ async function expireMute(
 		// Try to remove the role from the member
 		try {
 			const guild = await client.guilds.fetch(guildId);
-			const member = await guild.members.fetch(userId).catch(() => null);
+
+			// Force fresh fetch of member to bypass stale role cache
+			const member = await guild.members
+				.fetch({ user: userId, force: true })
+				.catch(() => null);
 
 			if (member) {
-				// Fetch the role to ensure it exists
+				// Force fresh fetch of role to bypass stale role cache
 				const muteRole = await guild.roles
-					.fetch(mute.muteRoleId)
+					.fetch(mute.muteRoleId, { force: true })
 					.catch(() => null);
+
 				if (muteRole) {
-					// Check if member still has the role
-					const hasMuteRole = member.roles.cache.has(mute.muteRoleId);
-					if (hasMuteRole) {
+					// member.roles.cache is now accurate because we used force:true above
+					if (member.roles.cache.has(mute.muteRoleId)) {
 						await member.roles
 							.remove(muteRole, "Mute expired")
 							.catch((error) => {
@@ -299,8 +318,23 @@ async function expireMute(
 									error,
 								);
 							});
+						logger.info(
+							`[Mutes] Removed mute role from ${userId} in guild ${guildId}`,
+						);
+					} else {
+						logger.info(
+							`[Mutes] Member ${userId} no longer has mute role, skipping removal`,
+						);
 					}
+				} else {
+					logger.warn(
+						`[Mutes] Mute role ${mute.muteRoleId} not found in guild ${guildId}`,
+					);
 				}
+			} else {
+				logger.info(
+					`[Mutes] Member ${userId} not in guild ${guildId} (may have left), cleaning up DB`,
+				);
 			}
 		} catch (error) {
 			// Log role removal failures but don't stop - we still need to clean up the DB
@@ -314,7 +348,7 @@ async function expireMute(
 			muteTimers.delete(key);
 		}
 
-		// Remove from database - this will be a no-op if already deleted
+		// Remove from database
 		await removeMute(guildId, userId);
 	} catch (error) {
 		logger.error(`[Mutes] Failed to expire mute ${guildId}:${userId}:`, error);
@@ -400,6 +434,11 @@ export function getPollingInterval(): number {
  * Cleanup on shutdown
  */
 export async function cleanupMuteSystem(): Promise<void> {
+	if (pollingTimer) {
+		clearInterval(pollingTimer);
+		pollingTimer = null;
+	}
+
 	for (const timer of muteTimers.values()) {
 		clearTimeout(timer);
 	}
