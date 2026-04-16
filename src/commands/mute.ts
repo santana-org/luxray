@@ -72,8 +72,7 @@ const MUTE_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(MUTE_CONFIG.NAME)
 	.setDescription(MUTE_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
 // Add options to the command
 builder.addUserOption((option) =>

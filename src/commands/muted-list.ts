@@ -55,8 +55,7 @@ const LIST_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(LIST_CONFIG.NAME)
 	.setDescription(LIST_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
 // Add optional page parameter for pagination
 builder.addIntegerOption((option) =>

@@ -76,8 +76,7 @@ const CLEAR_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(CLEAR_CONFIG.NAME)
 	.setDescription(CLEAR_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
 
 // Subcommand 1: amount - Delete fixed number of recent messages
 // Discord.bulkDelete() API optimizes this for performance

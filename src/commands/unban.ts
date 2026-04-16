@@ -55,8 +55,7 @@ const UNBAN_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(UNBAN_CONFIG.NAME)
 	.setDescription(UNBAN_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.BanMembers);
 
 // Add options to the command
 builder.addStringOption((option) =>

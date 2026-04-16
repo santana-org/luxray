@@ -65,8 +65,7 @@ const BAN_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(BAN_CONFIG.NAME)
 	.setDescription(BAN_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.BanMembers);
 
 // Add options to the command
 builder.addUserOption((option) =>

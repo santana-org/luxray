@@ -61,8 +61,7 @@ const KICK_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(KICK_CONFIG.NAME)
 	.setDescription(KICK_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.KickMembers);
 
 // Add options to the command
 builder.addUserOption((option) =>

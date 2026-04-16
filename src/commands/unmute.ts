@@ -56,8 +56,7 @@ const UNMUTE_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(UNMUTE_CONFIG.NAME)
 	.setDescription(UNMUTE_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
 // Add options to the command
 builder.addUserOption((option) =>
