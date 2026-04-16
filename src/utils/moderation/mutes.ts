@@ -29,9 +29,7 @@ let pollingTimer: ReturnType<typeof setInterval> | null = null;
 export async function initializeMuteSystem(client: Client): Promise<void> {
 	try {
 		const activeMutes = await prisma.mute.findMany();
-		logger.info(
-			`[Mutes] Loading ${activeMutes.length} active mutes from database`,
-		);
+		logger.info(LOGS.MUTE_LOADING(activeMutes.length));
 
 		for (const mute of activeMutes) {
 			const remaining = Number(mute.muteEndTime) - Date.now();
@@ -87,10 +85,7 @@ function scheduleMuteExpiration(
 			try {
 				await expireMute(guildId, userId, client);
 			} catch (error) {
-				logger.error(
-					`[Mutes] Failed to expire mute ${guildId}:${userId}`,
-					error,
-				);
+				logger.error(LOGS.MUTE_SCHEDULE_EXPIRE_FAILED(guildId, userId), error);
 			}
 		}, durationMs);
 
@@ -143,10 +138,10 @@ export async function addMute(
 		scheduleMuteExpiration(guildId, userId, durationMs, client);
 
 		logger.info(
-			`[Mutes] Added mute for ${userId} in guild ${guildId} (${formatTimeRemaining(durationMs)})`,
+			LOGS.MUTE_ADDED(userId, guildId, formatTimeRemaining(durationMs)),
 		);
 	} catch (error) {
-		logger.error(`[Mutes] Failed to add mute for ${userId}`, error);
+		logger.error(LOGS.MUTE_ADD_FAILED(userId), error);
 		throw error;
 	}
 }
@@ -175,7 +170,7 @@ export async function removeMute(
 			},
 		});
 
-		logger.info(`[Mutes] Removed mute for ${userId} in guild ${guildId}`);
+		logger.info(LOGS.MUTE_REMOVED(userId, guildId));
 	} catch (error) {
 		// P2025 = "An operation failed because it depends on one or more records that were required but not found"
 		// This is fine - the mute might have already been deleted or never existed
@@ -190,7 +185,7 @@ export async function removeMute(
 			// Record doesn't exist, silently ignore
 			return;
 		}
-		logger.warn(`[Mutes] Error removing mute for ${userId}:`, error);
+		logger.warn(LOGS.MUTE_REMOVE_ERROR(userId), error);
 	}
 }
 
@@ -219,10 +214,7 @@ export async function getMutedUsers(guildId: string): Promise<
 			mutedBy: m.mutedBy,
 		}));
 	} catch (error) {
-		logger.error(
-			`[Mutes] Failed to get muted users for guild ${guildId}`,
-			error,
-		);
+		logger.error(LOGS.MUTE_GET_FAILED(guildId), error);
 		return [];
 	}
 }
@@ -247,7 +239,7 @@ export async function checkAndExpireOldMutes(client: Client): Promise<void> {
 				await expireMute(mute.guildId, mute.userId, client);
 			} catch (error) {
 				logger.error(
-					`[Mutes] Failed to expire mute ${mute.guildId}:${mute.userId}`,
+					LOGS.MUTE_EXPIRE_BATCH_FAILED(mute.guildId, mute.userId),
 					error,
 				);
 			}
@@ -313,32 +305,21 @@ async function expireMute(
 						await member.roles
 							.remove(muteRole, "Mute expired")
 							.catch((error) => {
-								logger.warn(
-									`[Mutes] Failed to remove mute role from ${userId}:`,
-									error,
-								);
+								logger.warn(LOGS.MUTE_ROLE_REMOVE_FAILED(userId), error);
 							});
-						logger.info(
-							`[Mutes] Removed mute role from ${userId} in guild ${guildId}`,
-						);
+						logger.info(LOGS.MUTE_ROLE_REMOVED(userId, guildId));
 					} else {
-						logger.info(
-							`[Mutes] Member ${userId} no longer has mute role, skipping removal`,
-						);
+						logger.info(LOGS.MUTE_NO_ROLE(userId));
 					}
 				} else {
-					logger.warn(
-						`[Mutes] Mute role ${mute.muteRoleId} not found in guild ${guildId}`,
-					);
+					logger.warn(LOGS.MUTE_ROLE_NOT_FOUND(mute.muteRoleId, guildId));
 				}
 			} else {
-				logger.info(
-					`[Mutes] Member ${userId} not in guild ${guildId} (may have left), cleaning up DB`,
-				);
+				logger.info(LOGS.MUTE_MEMBER_LEFT(userId, guildId));
 			}
 		} catch (error) {
 			// Log role removal failures but don't stop - we still need to clean up the DB
-			logger.warn(`[Mutes] Error during role removal for ${userId}:`, error);
+			logger.warn(LOGS.MUTE_ROLE_REMOVAL_FAILED(userId), error);
 		}
 
 		// Clear timer
@@ -351,7 +332,7 @@ async function expireMute(
 		// Remove from database
 		await removeMute(guildId, userId);
 	} catch (error) {
-		logger.error(`[Mutes] Failed to expire mute ${guildId}:${userId}:`, error);
+		logger.error(LOGS.MUTE_EXPIRATION_FAILED(guildId, userId), error);
 	}
 }
 
