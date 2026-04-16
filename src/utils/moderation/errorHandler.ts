@@ -10,8 +10,8 @@
  */
 
 import type { ChatInputCommandInteraction } from "discord.js";
-import { sendError } from "./embeds.js";
-import { logError } from "./messageFilters.js";
+import { logError } from "@/utils/common/messageFilters.js";
+import { sendError } from "@/utils/embeds/embeds.js";
 
 /**
  * Handle moderation command errors

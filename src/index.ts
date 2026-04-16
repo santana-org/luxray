@@ -10,11 +10,11 @@
  * If any step fails, log error and exit with code 1 to prevent zombie process
  */
 
-import { client } from "./core/client.js";
-import { config } from "./core/config.js";
-import { loadCommands } from "./handlers/commandHandler.js";
-import { loadEvents } from "./handlers/eventHandler.js";
-import { LOGS, logger } from "./utils/logger.js";
+import { client } from "@/core/client.js";
+import { config } from "@/core/config.js";
+import { loadCommands } from "@/handlers/commandHandler.js";
+import { loadEvents } from "@/handlers/eventHandler.js";
+import { LOGS, logger } from "@/utils/logger/logger.js";
 
 /**
  * Initialize and start the Discord bot

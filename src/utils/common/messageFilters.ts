@@ -12,7 +12,7 @@
  */
 
 import type { Message } from "discord.js";
-import { logger } from "./logger.js";
+import { logger } from "@/utils/logger/logger.js";
 
 /**
  * Filter factory object: each method returns a predicate function

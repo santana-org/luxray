@@ -26,16 +26,20 @@ import {
 	SlashCommandBuilder,
 	TextChannel,
 } from "discord.js";
-import type { Command } from "../types/command.js";
-import { escapeMd } from "../utils/common.js";
+import type { Command } from "@/types/command.js";
+import { escapeMd } from "@/utils/common/common.js";
+import {
+	applyFilter,
+	filters,
+	logError,
+} from "@/utils/common/messageFilters.js";
 import {
 	createWarningEmbed,
 	sendError,
 	sendSuccess,
 	sendWarning,
 	validatePermissions,
-} from "../utils/embeds.js";
-import { applyFilter, filters, logError } from "../utils/messageFilters.js";
+} from "@/utils/embeds/embeds.js";
 
 /**
  * Centralized configuration for the clear command

@@ -20,12 +20,12 @@
  */
 
 import { type Client, Events } from "discord.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "@/utils/logger/logger.js";
 import {
 	checkAndExpireOldMutes,
 	getPollingInterval,
 	initializeMuteSystem,
-} from "../utils/mutes.js";
+} from "@/utils/moderation/mutes.js";
 
 /**
  * Initialize mute expiration handler

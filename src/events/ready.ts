@@ -13,7 +13,7 @@
  */
 
 import { ActivityType, type Client, Events } from "discord.js";
-import { LOGS, logger } from "../utils/logger.js";
+import { LOGS, logger } from "@/utils/logger/logger.js";
 
 // GitHub API configuration for fetching org repo count
 const GITHUB_API = {

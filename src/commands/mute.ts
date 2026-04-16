@@ -20,20 +20,24 @@
 
 import type { ChatInputCommandInteraction, Guild } from "discord.js";
 import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
-import type { Command } from "../types/command.js";
-import { sendModerationDM } from "../utils/dmNotification.js";
-import { sendError, validatePermissions } from "../utils/embeds.js";
-import { handleModerationError } from "../utils/errorHandler.js";
-import { sendModerationSuccess } from "../utils/moderationEmbeds.js";
+import type { Command } from "@/types/command.js";
+import { sendError, validatePermissions } from "@/utils/embeds/embeds.js";
+import { sendModerationSuccess } from "@/utils/embeds/moderationEmbeds.js";
+import { sendModerationDM } from "@/utils/moderation/dmNotification.js";
+import { handleModerationError } from "@/utils/moderation/errorHandler.js";
 import {
 	fetchTargetMember,
 	validateBotPermission,
 	validateGuildContext,
 	validateModerationTarget,
 	validateRoleHierarchy,
-} from "../utils/moderationValidation.js";
-import { getMuteRole, getMuteRoleId } from "../utils/muteConfig.js";
-import { addMute, formatTimeRemaining, parseDuration } from "../utils/mutes.js";
+} from "@/utils/moderation/moderationValidation.js";
+import { getMuteRole, getMuteRoleId } from "@/utils/moderation/muteConfig.js";
+import {
+	addMute,
+	formatTimeRemaining,
+	parseDuration,
+} from "@/utils/moderation/mutes.js";
 
 /**
  * Configuration object for mute command

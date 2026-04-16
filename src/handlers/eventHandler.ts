@@ -13,8 +13,8 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Client } from "discord.js";
-import { LOGS, logger } from "../utils/logger.js";
-import { getSourceExt, walkDir } from "../utils/paths.js";
+import { getSourceExt, walkDir } from "@/utils/common/paths.js";
+import { LOGS, logger } from "@/utils/logger/logger.js";
 
 /**
  * Event module interface
