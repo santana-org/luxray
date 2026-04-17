@@ -11,7 +11,7 @@
  */
 
 import { Client, Collection, GatewayIntentBits } from "discord.js";
-import type { Command } from "../types/command.js";
+import type { Command } from "@/types/command.js";
 
 // Minimal intents for functionality: reject Guilds returns no events
 // MessageContent is privileged: must be enabled in Discord Developer Portal

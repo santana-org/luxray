@@ -5,7 +5,7 @@
 	"type": "module",
 	"main": "dist/index.js",
 	"scripts": {
-		"build": "tsc",
+		"build": "tsc && tsc-alias",
 		"start": "node dist/index.js",
 		"dev": "nodemon --exec tsx src/index.ts",
 		"dev:watch": "nodemon --exec tsx src/index.ts --watch src",
@@ -41,6 +41,7 @@
 		"lint-staged": "^16.4.0",
 		"nodemon": "^3.1.14",
 		"prisma": "^7.7.0",
+		"tsc-alias": "^1.8.16",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2"
 	}

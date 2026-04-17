@@ -20,20 +20,26 @@
 
 import type { ChatInputCommandInteraction, Guild } from "discord.js";
 import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
-import type { Command } from "../types/command.js";
-import { sendModerationDM } from "../utils/dmNotification.js";
-import { sendError, validatePermissions } from "../utils/embeds.js";
-import { handleModerationError } from "../utils/errorHandler.js";
-import { sendModerationSuccess } from "../utils/moderationEmbeds.js";
+import type { Command } from "@/types/command.js";
 import {
+	sendError,
+	sendModerationSuccess,
+	validatePermissions,
+} from "@/utils/embeds/index.js";
+import {
+	addMute,
 	fetchTargetMember,
+	formatTimeRemaining,
+	getMuteRole,
+	getMuteRoleId,
+	handleModerationError,
+	parseDuration,
+	sendModerationDM,
 	validateBotPermission,
 	validateGuildContext,
 	validateModerationTarget,
 	validateRoleHierarchy,
-} from "../utils/moderationValidation.js";
-import { getMuteRole, getMuteRoleId } from "../utils/muteConfig.js";
-import { addMute, formatTimeRemaining, parseDuration } from "../utils/mutes.js";
+} from "@/utils/moderation/index.js";
 
 /**
  * Configuration object for mute command
@@ -66,8 +72,7 @@ const MUTE_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(MUTE_CONFIG.NAME)
 	.setDescription(MUTE_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
 // Add options to the command
 builder.addUserOption((option) =>

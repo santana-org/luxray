@@ -12,7 +12,7 @@
  */
 
 import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
-import { sendError } from "./embeds.js";
+import { sendError } from "@/utils/embeds/index.js";
 
 /**
  * Validate target is not self or server owner

@@ -24,15 +24,15 @@ import {
 	PermissionFlagsBits,
 	SlashCommandBuilder,
 } from "discord.js";
-import type { Command } from "../types/command.js";
-import { validatePermissions } from "../utils/embeds.js";
-import { handleModerationError } from "../utils/errorHandler.js";
-import { validateGuildContext } from "../utils/moderationValidation.js";
+import type { Command } from "@/types/command.js";
+import { validatePermissions } from "@/utils/embeds/index.js";
 import {
 	formatTimeRemaining,
 	getMutedUsers,
+	handleModerationError,
 	toDiscordTimestamp,
-} from "../utils/mutes.js";
+	validateGuildContext,
+} from "@/utils/moderation/index.js";
 
 /**
  * Configuration object for muted-list command
@@ -55,8 +55,7 @@ const LIST_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(LIST_CONFIG.NAME)
 	.setDescription(LIST_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
 // Add optional page parameter for pagination
 builder.addIntegerOption((option) =>

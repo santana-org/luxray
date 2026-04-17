@@ -19,8 +19,8 @@
  */
 
 import { Events, type Message } from "discord.js";
-import { config } from "../core/config.js";
-import { LOGS, logger } from "../utils/logger.js";
+import { config } from "@/core/config.js";
+import { LOGS, logger } from "@/utils/logger/index.js";
 
 // Response messages for prefix commands
 const PREFIX_RESPONSES = {

@@ -11,7 +11,7 @@
  */
 
 import type { User } from "discord.js";
-import { logger } from "./logger.js";
+import { logger } from "@/utils/logger/index.js";
 
 /**
  * Send moderation action DM to user

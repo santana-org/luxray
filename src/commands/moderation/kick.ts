@@ -19,18 +19,20 @@
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
-import type { Command } from "../types/command.js";
-import { sendModerationDM } from "../utils/dmNotification.js";
-import { validatePermissions } from "../utils/embeds.js";
-import { handleModerationError } from "../utils/errorHandler.js";
-import { sendModerationSuccess } from "../utils/moderationEmbeds.js";
+import type { Command } from "@/types/command.js";
+import {
+	sendModerationSuccess,
+	validatePermissions,
+} from "@/utils/embeds/index.js";
 import {
 	fetchTargetMember,
+	handleModerationError,
+	sendModerationDM,
 	validateBotPermission,
 	validateGuildContext,
 	validateModerationTarget,
 	validateRoleHierarchy,
-} from "../utils/moderationValidation.js";
+} from "@/utils/moderation/index.js";
 
 /**
  * Configuration object for kick command
@@ -59,8 +61,7 @@ const KICK_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(KICK_CONFIG.NAME)
 	.setDescription(KICK_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.KickMembers);
 
 // Add options to the command
 builder.addUserOption((option) =>

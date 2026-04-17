@@ -18,16 +18,19 @@
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
-import type { Command } from "../types/command.js";
-import { sendModerationDM } from "../utils/dmNotification.js";
-import { sendError, validatePermissions } from "../utils/embeds.js";
-import { handleModerationError } from "../utils/errorHandler.js";
-import { sendModerationSuccess } from "../utils/moderationEmbeds.js";
+import type { Command } from "@/types/command.js";
 import {
+	sendError,
+	sendModerationSuccess,
+	validatePermissions,
+} from "@/utils/embeds/index.js";
+import {
+	handleModerationError,
+	sendModerationDM,
 	validateBotPermission,
 	validateGuildContext,
 	validateModerationTarget,
-} from "../utils/moderationValidation.js";
+} from "@/utils/moderation/index.js";
 
 /**
  * Configuration object for unban command
@@ -52,8 +55,7 @@ const UNBAN_CONFIG = {
 const builder = new SlashCommandBuilder()
 	.setName(UNBAN_CONFIG.NAME)
 	.setDescription(UNBAN_CONFIG.DESCRIPTION)
-	.setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
-	.setDMPermission(false);
+	.setDefaultMemberPermissions(PermissionFlagsBits.BanMembers);
 
 // Add options to the command
 builder.addStringOption((option) =>

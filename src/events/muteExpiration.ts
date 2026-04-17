@@ -20,12 +20,12 @@
  */
 
 import { type Client, Events } from "discord.js";
-import { logger } from "../utils/logger.js";
+import { LOGS, logger } from "@/utils/logger/index.js";
 import {
 	checkAndExpireOldMutes,
 	getPollingInterval,
 	initializeMuteSystem,
-} from "../utils/mutes.js";
+} from "@/utils/moderation/index.js";
 
 /**
  * Initialize mute expiration handler
@@ -37,7 +37,7 @@ export default {
 	once: true, // Run exactly once on startup
 	async execute(client: Client<true>): Promise<void> {
 		try {
-			logger.info("🔄 Initializing mute system and expiration handler");
+			logger.info(LOGS.MUTE_EXPIRATION_HANDLER_STARTING);
 
 			// Initialize mute system and reconstruct timers from database
 			await initializeMuteSystem(client);
@@ -51,9 +51,9 @@ export default {
 				await checkAndExpireOldMutes(client);
 			}, pollingInterval);
 
-			logger.info("✅ Mute system expiration handler ready");
+			logger.info(LOGS.MUTE_EXPIRATION_HANDLER_READY);
 		} catch (error) {
-			logger.error("❌ Failed to initialize mute expiration handler", error);
+			logger.error(LOGS.MUTE_EXPIRATION_HANDLER_FAILED, error);
 		}
 	},
 };

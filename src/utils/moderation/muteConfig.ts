@@ -10,7 +10,7 @@
  */
 
 import type { ChatInputCommandInteraction, Guild, Role } from "discord.js";
-import { sendError } from "./embeds.js";
+import { sendError } from "@/utils/embeds/index.js";
 
 /**
  * Get mute role ID from environment with optional error message

@@ -13,7 +13,7 @@
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { SlashCommandBuilder } from "discord.js";
-import type { Command } from "../types/command.js";
+import type { Command } from "@/types/command.js";
 
 // Command configuration: centralized for i18n-ready architecture
 const PING_COMMAND = {

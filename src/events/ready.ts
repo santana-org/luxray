@@ -13,7 +13,7 @@
  */
 
 import { ActivityType, type Client, Events } from "discord.js";
-import { LOGS, logger } from "../utils/logger.js";
+import { LOGS, logger } from "@/utils/logger/index.js";
 
 // GitHub API configuration for fetching org repo count
 const GITHUB_API = {
@@ -50,14 +50,14 @@ async function fetchRepoCount(): Promise<number> {
 		});
 
 		if (!res.ok) {
-			logger.error(`⚠️ GitHub API returned ${res.status} ${res.statusText}`);
+			logger.error(LOGS.GITHUB_API_ERROR(res.status, res.statusText));
 			return 0;
 		}
 
 		const data = (await res.json()) as GitHubOrg;
 		return data.public_repos;
 	} catch (err) {
-		logger.error("⚠️ Failed to fetch GitHub org info", err);
+		logger.error(LOGS.GITHUB_FETCH_FAILED, err);
 		return 0;
 	}
 }
