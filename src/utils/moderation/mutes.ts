@@ -206,13 +206,21 @@ export async function getMutedUsers(guildId: string): Promise<
 			where: { guildId },
 		});
 
-		return mutes.map((m: any) => ({
-			userId: m.userId,
-			muteStartTime: Number(m.muteStartTime),
-			muteEndTime: Number(m.muteEndTime),
-			reason: m.reason,
-			mutedBy: m.mutedBy,
-		}));
+		return mutes.map(
+			(m: {
+				userId: string;
+				muteStartTime: bigint;
+				muteEndTime: bigint;
+				reason: string | null;
+				mutedBy: string;
+			}) => ({
+				userId: m.userId,
+				muteStartTime: Number(m.muteStartTime),
+				muteEndTime: Number(m.muteEndTime),
+				reason: m.reason,
+				mutedBy: m.mutedBy,
+			}),
+		);
 	} catch (error) {
 		logger.error(LOGS.MUTE_GET_FAILED(guildId), error);
 		return [];
